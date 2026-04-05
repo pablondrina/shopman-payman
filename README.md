@@ -1,76 +1,47 @@
 # shopman-payman
 
-Payment intents and transaction management.
+Gestão de pagamentos para Django. Payment intents com lifecycle completo, transações imutáveis, suporte a múltiplos gateways (PIX, cartão, counter), e protocols para integração com qualquer provedor.
 
 Part of the [Django Shopman](https://github.com/pablondrina/django-shopman) commerce framework.
 
-## Overview
+## Domínio
 
-**Domain:** Pagamentos
-**Namespace:** `shopman.payman`
-**Pip package:** `shopman-payman`
+- **PaymentIntent** — intenção de pagamento vinculada a um pedido. Status: pending → authorized → captured → failed/cancelled/refunded. Suporta PIX, cartão, counter (caixa), e external (marketplace).
+- **PaymentTransaction** — movimentação financeira imutável (capture, refund, chargeback). Audit trail completo com gateway_id.
 
-### Main Models
+## PaymentService
 
-PaymentIntent, PaymentTransaction
+| Método | O que faz |
+|--------|-----------|
+| `create_intent(order_ref, method, amount_q)` | Cria intenção de pagamento |
+| `authorize(intent_ref)` | Autoriza (reserva no gateway) |
+| `capture(intent_ref)` | Captura (efetiva cobrança) |
+| `cancel(intent_ref)` | Cancela intent pendente |
+| `refund(intent_ref, amount_q)` | Estorno total ou parcial |
 
-## Installation
+## Protocols
+
+O Payman define `GatewayIntent` protocol — qualquer gateway (EFI, Stripe, PagSeguro) implementa este contrato. O framework resolve o gateway via adapter pattern.
+
+## Instalação
 
 ```bash
 pip install shopman-payman
 ```
 
-## Quick Start
-
 ```python
-# settings.py
 INSTALLED_APPS = [
     "shopman.payman",
-    # ...
 ]
 ```
 
-## Architecture
-
-This package is a **Core app** — it provides domain-specific models, services, and protocols with zero dependencies on other Shopman apps (except `shopman-utils`).
-
-Communication with other apps happens via `typing.Protocol` — no direct imports. The framework layer (`django-shopman`) orchestrates integration between core apps.
-
-## Conventions
-
-- **Monetary values:** `int` in centavos with `_q` suffix (e.g., `price_q = 1050` → R$ 10.50)
-- **Identifiers:** `ref` (not `code`). Exception: `Product.sku`
-- **Inter-app communication:** `typing.Protocol` + adapters, no direct imports
-
 ## Development
 
-This package is developed in the [django-shopman](https://github.com/pablondrina/django-shopman) monorepo under `packages/payman/`.
-
 ```bash
-# Clone the monorepo
 git clone https://github.com/pablondrina/django-shopman.git
-cd django-shopman
-
-# Install in editable mode
-pip install -e packages/payman
-
-# Run tests
-make test-payman
+cd django-shopman && pip install -e packages/payman
+make test-payman  # ~233 testes
 ```
-
-## Related Packages
-
-| Package | Domain |
-|---------|--------|
-| [django-shopman](https://github.com/pablondrina/django-shopman) | Framework orchestrator |
-| [shopman-utils](https://github.com/pablondrina/shopman-utils) | Shared utilities |
-| [shopman-omniman](https://github.com/pablondrina/shopman-omniman) | Orders |
-| [shopman-stockman](https://github.com/pablondrina/shopman-stockman) | Inventory |
-| [shopman-craftsman](https://github.com/pablondrina/shopman-craftsman) | Production |
-| [shopman-offerman](https://github.com/pablondrina/shopman-offerman) | Catalog |
-| [shopman-guestman](https://github.com/pablondrina/shopman-guestman) | CRM |
-| [shopman-doorman](https://github.com/pablondrina/shopman-doorman) | Auth |
-| [shopman-payman](https://github.com/pablondrina/shopman-payman) | Payments |
 
 ## License
 
